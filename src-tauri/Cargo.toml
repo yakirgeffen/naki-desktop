@@ -18,11 +18,12 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
-tauri-plugin-shell = "2"
-tauri-plugin-opener = "2"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-rusqlite = { version = "0.31.0", features = ["bundled"] }
+tauri = { version = "2.0.0-rc", features = [] }
+tauri-plugin-shell = "2.0.0-rc"
+tauri-plugin-opener = "2.0.0-rc"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = "0.31.0"
 walkdir = "2.5.0"
 trash = "5.0.0"
+reqwest = { version = "0.12", features = ["json", "blocking"] }
