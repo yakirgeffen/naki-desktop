@@ -162,7 +162,7 @@ export default function App() {
 
   const openCheckout = async () => {
     // Replace with your actual Gumroad product link
-    await openUrl("https://yakirgeffen.gumroad.com/l/naki");
+    await openUrl("https://yakirgeffen.gumroad.com/l/naki?utm_source=app&utm_medium=upgrade-prompt&utm_campaign=naki-launch-w1");
   };
 
   const selectedChats = chats.filter((c) => selectedJids.has(c.jid));
