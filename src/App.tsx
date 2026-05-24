@@ -47,14 +47,28 @@ export default function App() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [licenseError, setLicenseError] = useState("");
 
+  // --- EULA Gate (CSO-Security: required before first scan) ---
+  const [showEulaModal, setShowEulaModal] = useState(false);
+
   useEffect(() => {
     // Check our hidden config file on boot
     invoke("get_license_state").then((state: any) => {
       setIsPro(state.is_pro);
       setHasUsedFreeSweep(state.has_used_free_sweep);
+      if (!state.eula_accepted) {
+        // Gate: must accept EULA before any scan runs
+        setShowEulaModal(true);
+      } else {
+        fetchChats();
+      }
     });
-    fetchChats();
   }, []);
+
+  const handleAcceptEula = async () => {
+    await invoke("accept_eula");
+    setShowEulaModal(false);
+    fetchChats();
+  };
 
   const fetchChats = () => {
     setLoading(true);
@@ -177,6 +191,32 @@ export default function App() {
     <div className="flex flex-col h-screen bg-[#F4F5F7] text-[#333333] font-sans relative select-none">
       
       {/* --- STANDARD TRASH MODAL --- */}
+      {/* --- EULA MODAL (first-launch gate, CSO-Security required) --- */}
+      {showEulaModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#F4F5F7]/90 backdrop-blur-md">
+          <div className="bg-white w-[440px] shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-[#E0E0E0] overflow-hidden flex flex-col">
+            <div className="p-8 pb-6">
+              <h3 className="text-[11px] tracking-[0.2em] font-black uppercase text-[#111] mb-4">Before You Begin</h3>
+              <p className="text-[13px] text-[#555] leading-relaxed mb-3 font-medium">
+                Naki is an independent utility. It is not affiliated with, endorsed by, or connected to WhatsApp or Meta Platforms.
+              </p>
+              <p className="text-[13px] text-[#555] leading-relaxed mb-3 font-medium">
+                Naki accesses your local WhatsApp storage in read-only mode to display chat sizes. Deleted files go to your macOS Trash; they are not permanently removed until you empty the Trash. No data is transmitted to any server.
+              </p>
+              <p className="text-[13px] text-[#555] leading-relaxed mb-6 font-medium">
+                You are responsible for verifying what you delete. Back up anything you are not certain about before running a sweep.
+              </p>
+              <button
+                onClick={handleAcceptEula}
+                className="w-full bg-[#111] text-white py-2.5 text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-[#333] active:bg-black transition-colors"
+              >
+                I Accept
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showTrashModal && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
           <div className="bg-gradient-to-b from-[#FFFFFF] to-[#EAEAEA] w-80 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.2),0_1px_3px_rgba(0,0,0,0.1)] border border-[#C4C4C4] overflow-hidden flex flex-col">
