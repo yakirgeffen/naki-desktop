@@ -190,7 +190,7 @@ fn get_license_state(app: AppHandle) -> AppConfig {
 
 #[tauri::command]
 async fn verify_gumroad_license(app: AppHandle, license_key: String) -> Result<bool, String> {
-    let product_permalink = "YOUR_GUMROAD_PERMALINK"; 
+    let product_permalink = "naki"; 
     
     let url = "https://api.gumroad.com/v2/licenses/verify";
     let client = reqwest::Client::new();
