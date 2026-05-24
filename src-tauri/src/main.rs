@@ -30,6 +30,8 @@ struct ChatInfo {
 
 #[derive(serde::Serialize, serde::Deserialize, Default)]
 struct AppConfig {
+    #[serde(default)]
+    schema_version: u32,
     has_used_free_sweep: bool,
     is_pro: bool,
     #[serde(default)]
@@ -124,6 +126,17 @@ async fn scan_chats() -> Result<Vec<ChatInfo>, String> {
 
     // Wait up to 5 seconds if WhatsApp is actively checkpointing data
     let _ = conn.busy_timeout(std::time::Duration::from_secs(5));
+
+    // CTO architecture challenge item 9: schema-version probe — fail with recoverable message
+    // if WhatsApp's CoreData schema has changed (table rename, removal, encryption).
+    let table_check: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='ZWACHATSESSION'",
+        [],
+        |r| r.get(0),
+    );
+    if table_check.unwrap_or(0) == 0 {
+        return Err("Naki does not recognize this version of WhatsApp. Please check for a Naki update at yakirgeffen.com/naki.".to_string());
+    }
 
     // Grab every single chat. Let the file system check (media_path.exists) do the filtering.
     let mut stmt = conn.prepare(
