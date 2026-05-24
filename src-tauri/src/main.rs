@@ -32,6 +32,8 @@ struct ChatInfo {
 struct AppConfig {
     has_used_free_sweep: bool,
     is_pro: bool,
+    #[serde(default)]
+    hardware_fingerprint: Option<String>,
 }
 
 // --- Helper Functions for Config ---
@@ -71,6 +73,37 @@ fn get_whatsapp_container_path() -> Option<PathBuf> {
     let home = env::var("HOME").ok()?;
     let path = PathBuf::from(home).join("Library/Group Containers/group.net.whatsapp.WhatsApp.shared");
     if path.exists() { Some(path) } else { None }
+}
+
+fn get_hardware_fingerprint() -> String {
+    use std::process::Command;
+    use sha2::{Sha256, Digest};
+
+    let stdout = Command::new("/usr/sbin/system_profiler")
+        .args(["SPHardwareDataType"])
+        .output()
+        .map(|o| o.stdout)
+        .unwrap_or_default();
+
+    let raw = String::from_utf8_lossy(&stdout);
+    let serial = raw.lines()
+        .find(|l| l.contains("Serial Number"))
+        .and_then(|l| l.split(':').nth(1))
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| {
+            let host = Command::new("/bin/hostname").output()
+                .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+                .unwrap_or_else(|_| "unknown-host".to_string());
+            let osver = Command::new("/usr/bin/sw_vers").args(["-productVersion"]).output()
+                .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+                .unwrap_or_else(|_| "unknown-os".to_string());
+            format!("fallback:{}:{}", host, osver)
+        });
+
+    let mut hasher = Sha256::new();
+    hasher.update(serial.as_bytes());
+    format!("{:x}", hasher.finalize())
 }
 
 #[tauri::command]
@@ -160,6 +193,24 @@ async fn scan_chats() -> Result<Vec<ChatInfo>, String> {
 
 #[tauri::command]
 async fn delete_media(app: AppHandle, jids: Vec<String>) -> Result<(), String> {
+    // Freemium gate — server-side enforcement with machine binding (CSO-Security)
+    let mut config = read_config(&app);
+    let current_fp = get_hardware_fingerprint();
+    if !config.is_pro && config.has_used_free_sweep {
+        match config.hardware_fingerprint.as_deref() {
+            Some(stored) if stored == current_fp => {
+                return Err("Free sweep already used on this machine. Upgrade to Pro for unlimited sweeps.".into());
+            }
+            _ => {
+                return Err("License not valid for this machine.".into());
+            }
+        }
+    }
+    if config.hardware_fingerprint.is_none() {
+        config.hardware_fingerprint = Some(current_fp);
+        save_config(&app, &config);
+    }
+
     let base_path = get_whatsapp_container_path().ok_or("WhatsApp Desktop directory not found.")?;
     let media_base_path = base_path.join("Message/Media");
 
@@ -185,7 +236,12 @@ async fn delete_media(app: AppHandle, jids: Vec<String>) -> Result<(), String> {
 
 #[tauri::command]
 fn get_license_state(app: AppHandle) -> AppConfig {
-    read_config(&app)
+    let mut config = read_config(&app);
+    if config.hardware_fingerprint.is_none() {
+        config.hardware_fingerprint = Some(get_hardware_fingerprint());
+        save_config(&app, &config);
+    }
+    config
 }
 
 #[tauri::command]

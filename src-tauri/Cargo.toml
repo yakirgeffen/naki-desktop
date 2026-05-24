@@ -27,3 +27,4 @@ rusqlite = "0.31.0"
 walkdir = "2.5.0"
 trash = "5.0.0"
 reqwest = { version = "0.12", features = ["json", "blocking"] }
+sha2 = "0.10"
