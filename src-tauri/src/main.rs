@@ -214,15 +214,35 @@ async fn delete_media(app: AppHandle, jids: Vec<String>) -> Result<(), String> {
     let base_path = get_whatsapp_container_path().ok_or("WhatsApp Desktop directory not found.")?;
     let media_base_path = base_path.join("Message/Media");
 
+    // CSO-Security: canonical containment base, computed once
+    let canon_base = std::fs::canonicalize(&media_base_path)
+        .map_err(|e| format!("Failed to canonicalize media base: {}", e))?;
+
     for jid in jids {
         if jid.contains('/') || jid.contains('\\') || jid.contains("..") {
-            continue; 
+            continue;
         }
 
         let target_path = media_base_path.join(&jid);
-        if target_path.exists() {
-            trash::delete(&target_path).map_err(|e| format!("Failed to trash media for {}: {}", jid, e))?;
+        if !target_path.exists() {
+            continue;
         }
+
+        // CSO-Security: symlink rejection via symlink_metadata (no follow)
+        let meta = std::fs::symlink_metadata(&target_path)
+            .map_err(|e| format!("Failed to stat {}: {}", jid, e))?;
+        if meta.file_type().is_symlink() {
+            continue;
+        }
+
+        // CSO-Security: positive containment assertion on canonical path
+        let canon_target = std::fs::canonicalize(&target_path)
+            .map_err(|e| format!("Failed to canonicalize {}: {}", jid, e))?;
+        if !canon_target.starts_with(&canon_base) {
+            continue;
+        }
+
+        trash::delete(&target_path).map_err(|e| format!("Failed to trash media for {}: {}", jid, e))?;
     }
 
     let mut config = read_config(&app);
