@@ -36,6 +36,8 @@ struct AppConfig {
     is_pro: bool,
     #[serde(default)]
     hardware_fingerprint: Option<String>,
+    #[serde(default)]
+    eula_accepted: bool,
 }
 
 // --- Helper Functions for Config ---
@@ -278,6 +280,14 @@ fn get_license_state(app: AppHandle) -> AppConfig {
 }
 
 #[tauri::command]
+fn accept_eula(app: AppHandle) -> Result<(), String> {
+    let mut config = read_config(&app);
+    config.eula_accepted = true;
+    save_config(&app, &config);
+    Ok(())
+}
+
+#[tauri::command]
 async fn verify_gumroad_license(app: AppHandle, license_key: String) -> Result<bool, String> {
     let product_permalink = "naki"; 
     
@@ -312,10 +322,11 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init()) 
         .invoke_handler(tauri::generate_handler![
-            scan_chats, 
-            delete_media, 
-            get_license_state, 
-            verify_gumroad_license
+            scan_chats,
+            delete_media,
+            get_license_state,
+            verify_gumroad_license,
+            accept_eula
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
