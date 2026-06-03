@@ -168,7 +168,7 @@ export default function App() {
   const selectedChats = chats.filter((c) => selectedJids.has(c.jid));
   const totalSelectedBytes = selectedChats.reduce((sum, c) => sum + c.size_bytes, 0);
 
-  if (loading && chats.length === 0) {
+  if (loading && chats.length === 0 && !showEulaModal) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#E8ECEF] text-[#4A4A4A] select-none uppercase tracking-widest text-xs font-bold">
         <p>Scanning...</p>
