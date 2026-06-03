@@ -112,11 +112,11 @@ fn get_hardware_fingerprint() -> String {
 
 #[tauri::command]
 async fn scan_chats() -> Result<Vec<ChatInfo>, String> {
-    let base_path = get_whatsapp_container_path().ok_or("WhatsApp Desktop directory not found.")?;
+    let base_path = get_whatsapp_container_path().ok_or("WhatsAppDataNotFound")?;
     
     let original_db_path = base_path.join("ChatStorage.sqlite");
     if !original_db_path.exists() {
-        return Err("Could not find ChatStorage.sqlite. Please ensure WhatsApp Desktop is installed and synced on this Mac.".to_string());
+        return Err("WhatsAppDataNotFound".to_string());
     }
 
     // THE UPGRADE: Connect directly to the live database as a concurrent reader.

@@ -176,6 +176,41 @@ export default function App() {
     );
   }
 
+  if (error === "WhatsAppDataNotFound") {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#E8ECEF] text-[#4A4A4A] p-6 select-none">
+        <div className="bg-white p-8 rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-[#D1D1D1] max-w-md w-full">
+          <h2 className="text-base font-semibold mb-3 text-[#111]">
+            WhatsApp Desktop isn't installed on this Mac
+          </h2>
+          <p className="text-sm text-[#555] leading-relaxed mb-3">
+            Naki works by reading the chat files WhatsApp's Mac app keeps on your computer. Without that app installed, there's nothing local for Naki to work with.
+          </p>
+          <p className="text-sm text-[#555] leading-relaxed mb-6">
+            Two ways forward.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <button
+              onClick={() => openUrl("https://www.whatsapp.com/download")}
+              className="flex-1 bg-[#111] text-white py-2.5 text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-[#333] active:bg-black transition-colors"
+            >
+              Download WhatsApp for Mac
+            </button>
+            <button
+              onClick={() => openUrl("mailto:thegeffenstudio@gmail.com?subject=Naki%20refund%20request")}
+              className="flex-1 border border-[#D4D4D4] text-[#555] hover:text-[#111] py-2.5 text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-[#F4F4F4] transition-colors bg-white"
+            >
+              Request a refund
+            </button>
+          </div>
+          <p className="text-xs text-[#888] text-center">
+            Refunds are no-questions-asked within 14 days.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-[#E8ECEF] text-[#4A4A4A] p-6 select-none">
